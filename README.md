@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Last-Mile Delivery Tracker
 
 A delivery management platform: customers place orders, the system works out what to charge them on the spot, an agent gets assigned (by hand, automatically, or by claiming it themselves), and everyone gets kept in the loop as the package moves from pickup to doorstep.
@@ -264,3 +265,6 @@ If you'd like, I can walk through the exact steps for whichever platform you use
 ## A note on tests
 
 There's no automated test suite included here — given the time available, the priority was making sure the core flows (rate calculation, zone detection, auto-assignment, the full status lifecycle including failure and reschedule, and role-based permissions) actually work correctly, which I verified by hand end-to-end against the running API before writing the frontend against it. If this were headed to production, the rate engine and assignment logic in `backend/src/utils/` are the two places I'd write unit tests for first — they're pure functions with no side effects, so they're cheap to test thoroughly.
+=======
+# Last-Mile-Delivery
+>>>>>>> d784f6c4c1bdb313f3dcadd40c9b5afb480df312
