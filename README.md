@@ -285,9 +285,3 @@ I built and tested all of this in a sandboxed environment whose outbound network
 Happy to walk through the exact steps for whichever platform you land on.
 
 ---
-
-## A note on tests
-
-<<<<<<< HEAD
-There's no automated test suite included here — given the time available, the priority was making sure the core flows (rate calculation, zone detection, auto-assignment, the full status lifecycle including failure and reschedule, and role-based permissions) actually work correctly, which I verified by hand end-to-end against the running API before writing the frontend against it. If this were headed to production, the rate engine and assignment logic in `backend/src/utils/` are the two places I'd write unit tests for first — they're pure functions with no side effects, so they're cheap to test thoroughly.
-=======
