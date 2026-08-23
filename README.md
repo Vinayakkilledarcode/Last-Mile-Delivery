@@ -12,25 +12,23 @@ This README is written the way I'd actually explain the project to someone joini
 
 ## Screenshots
 
-_Add your own screenshots here once the app is running — drop the image files straight into the `screenshots/` folder using the filenames below, and they'll show up automatically since the paths are already wired into this README._
+Here's the app actually running, walking through one full order end to end.
 
-**How to capture them:** run the app locally (see setup below), open each screen in your browser, and use your OS screenshot tool (`Win + Shift + S` on Windows, `Cmd + Shift + 4` on Mac) to grab the window. Save each one into `screenshots/` with the exact filename listed, then commit and push — GitHub will render them right here on the repo's front page.
-
-| Screen | Save as |
-|---|---|
-| Login page | `screenshots/login.png` |
-| Customer placing an order, with the live price quote showing | `screenshots/place-order.png` |
-| Order detail page with the tracking timeline | `screenshots/order-detail.png` |
-| Agent's "Available Pickups" screen | `screenshots/available-pickups.png` |
-| Admin's Zones & Rate Cards screens | `screenshots/admin-rates.png` |
+**Signing in**
 
 ![Login](screenshots/login.png)
-![Place an order](screenshots/place-order.png)
-![Order tracking](screenshots/order-detail.png)
-![Available pickups](screenshots/available-pickups.png)
-![Admin rate cards](screenshots/admin-rates.png)
 
-(If an image looks broken right now, that just means the file hasn't been added yet — nothing wrong with the app.)
+**A customer tracking their order — delivered, full timeline**
+
+![Order detail, customer view](screenshots/order-detail-customer.png)
+
+**The same order from the delivery agent's side**
+
+![Order detail, agent view](screenshots/order-detail-agent.png)
+
+Notice the timeline matches on both sides — every status change (claimed, picked up, in transit, out for delivery, delivered) is logged with a timestamp and who did it, and both the customer and the agent are looking at the exact same audit trail, just with different action buttons available depending on the role.
+
+_A few more screens I haven't captured yet — the customer's Place an Order screen with a live price quote, the agent's Available Pickups list, and the admin's Zones/Rate Cards screens. Same process as above: capture, save into `screenshots/` with a sensible filename, add an `![...]()` line here, push._
 
 ---
 
