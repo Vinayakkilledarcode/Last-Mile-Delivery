@@ -1,26 +1,50 @@
 <<<<<<< HEAD
 # Last-Mile Delivery Tracker
 
-A delivery management platform: customers place orders, the system works out what to charge them on the spot, an agent gets assigned (by hand, automatically, or by claiming it themselves), and everyone gets kept in the loop as the package moves from pickup to doorstep.
+I built this to answer a fairly ordinary logistics problem the "right" way: customers place orders, the app tells them exactly what it'll cost before they commit to anything, a delivery agent gets matched to the order (by an admin, automatically, or by grabbing it themselves), and everyone — customer, agent, admin — stays in the loop as the package moves from pickup to doorstep.
 
-This doc is written the way I'd explain the project to a teammate joining the repo for the first time — what's here, why it's built this way, and how to get it running on your machine.
+Nothing exotic under the hood. Node/Express on the backend, React on the front, SQLite in between so there's no database server to fuss with. The interesting part isn't the tech stack, it's getting the rate math and the status lifecycle actually right, which is where most of the thinking went.
 
-**A note if you're testing multiple roles at once:** sessions are stored per browser tab (not shared across the whole browser), so you can log in as a customer in one tab and an agent in another, side by side, and each tab keeps its own login. Just don't reuse the exact same tab for two different accounts without logging out first.
+This README is written the way I'd actually explain the project to someone joining the repo — what's here, why I built it this way, and how to get it running without guessing.
 
----
-
-## What's actually in the box
-
-- **`backend/`** — a Node.js + Express API, backed by SQLite (via `better-sqlite3`). No external database to install — the whole thing runs off a single file.
-- **`frontend/`** — a React app (Vite) with three experiences baked into one login system: customer, delivery agent, and admin.
-
-There's no comments littered through the code — variable and function names are meant to carry the meaning on their own, and this README + the system design doc cover the "why."
+**Quick heads-up if you're testing more than one role at once:** each browser tab keeps its own login (sessions live in `sessionStorage`, not `localStorage`), so you can be a customer in one tab and an agent in another, side by side. Just don't try to be two people in the same tab without signing out first.
 
 ---
 
-## Getting it running locally
+## Screenshots
 
-You'll need Node.js 18 or newer. That's the only hard dependency — SQLite ships as part of the `better-sqlite3` package, so there's no database server to stand up.
+Here's the app actually running, walking through one full order end to end.
+
+**Signing in**
+
+![Login](screenshots/login.png)
+
+**A customer tracking their order — delivered, full timeline**
+
+![Order detail, customer view](screenshots/order-detail-customer.png)
+
+**The same order from the delivery agent's side**
+
+![Order detail, agent view](screenshots/order-detail-agent.png)
+
+Notice the timeline matches on both sides — every status change (claimed, picked up, in transit, out for delivery, delivered) is logged with a timestamp and who did it, and both the customer and the agent are looking at the exact same audit trail, just with different action buttons available depending on the role.
+
+_A few more screens I haven't captured yet — the customer's Place an Order screen with a live price quote, the agent's Available Pickups list, and the admin's Zones/Rate Cards screens. Same process as above: capture, save into `screenshots/` with a sensible filename, add an `![...]()` line here, push._
+
+---
+
+## What's actually in here
+
+- **`backend/`** — a Node.js + Express API, backed by SQLite (via `better-sqlite3`). The whole database is one file — nothing to install, nothing to configure beyond an env file.
+- **`frontend/`** — a React app (Vite) with three different experiences behind one login: customer, delivery agent, and admin.
+
+I kept inline comments out of the code on purpose — I'd rather the function and variable names carry the meaning than lean on comments that go stale. This README (and the system design doc alongside it) is where the "why" lives instead.
+
+---
+
+## Getting it running on your machine
+
+All you need is Node.js 18 or newer. That's genuinely it — SQLite comes bundled with `better-sqlite3`, so there's no separate database server to spin up.
 
 ### 1. Backend
 
@@ -28,11 +52,11 @@ You'll need Node.js 18 or newer. That's the only hard dependency — SQLite ship
 cd backend
 cp .env.example .env
 npm install
-npm run seed      # creates the SQLite file and drops in some demo data
+npm run seed      # sets up the SQLite file and drops in some demo data
 npm start          # runs on http://localhost:4000
 ```
 
-The seed script gives you three ready-to-use logins so you're not starting from a completely empty app:
+The seed script leaves you with a few ready-made logins so you're not starting from a completely blank app:
 
 | Role | Email | Password |
 |---|---|---|
@@ -41,11 +65,11 @@ The seed script gives you three ready-to-use logins so you're not starting from 
 | Agent | `ravi.agent@lastmile.test` | `agent123` |
 | Agent | `meera.agent@lastmile.test` | `agent123` |
 
-It also sets up two zones (North and South), a handful of areas mapped into them, and rate cards for both B2B and B2C so you can place an order immediately without configuring anything first.
+It also seeds two zones (North and South), a handful of areas mapped into them, and rate cards for both B2B and B2C — so you can place a real order the moment the app is up, without configuring anything first.
 
 ### 2. Frontend
 
-In a second terminal:
+Second terminal:
 
 ```bash
 cd frontend
@@ -53,9 +77,9 @@ npm install
 npm run dev        # runs on http://localhost:5173
 ```
 
-The dev server proxies `/api` calls straight to `http://localhost:4000`, so as long as the backend is running, you don't need to touch any config to get the two talking to each other.
+The dev server proxies anything under `/api` straight through to `http://localhost:4000`, so as long as the backend's running, the two just talk to each other — no extra config needed.
 
-Open `http://localhost:5173`, log in with one of the demo accounts above, and you're in.
+Open `http://localhost:5173`, log in with one of the accounts above, and you're in.
 
 ### 3. Building for production
 
@@ -63,7 +87,7 @@ Open `http://localhost:5173`, log in with one of the demo accounts above, and yo
 cd frontend && npm run build
 ```
 
-This outputs static files to `frontend/dist`, which you can serve from any static host (or from Express itself, if you'd rather ship one deployable unit — see the note on deployment below).
+That drops static files into `frontend/dist`, ready to serve from any static host (or from Express itself, if you'd rather ship it as one deployable thing — more on that further down).
 
 ---
 
@@ -83,79 +107,79 @@ SMTP_FROM=notifications@lastmile-tracker.local
 FRONTEND_ORIGIN=http://localhost:5173
 ```
 
-A few notes on these:
+A few notes worth knowing:
 
-- **`JWT_SECRET`** — swap this for something random before you deploy anywhere real. It's what signs the login tokens.
-- **`SMTP_*`** — email is genuinely optional. If you don't fill these in, the app doesn't break — it just logs what *would* have been emailed to the console, and still records the notification in the database. This is handy for local development, and it means you can plug in any free-tier SMTP provider (Ethereal for testing, Brevo/Mailjet/Gmail app-passwords for something closer to real) just by filling in the four SMTP fields.
-- **`DB_PATH`** — where the SQLite file lives. The folder gets created automatically if it doesn't exist.
+- **`JWT_SECRET`** — please actually change this before deploying anywhere real. It's what signs the login tokens.
+- **`SMTP_*`** — email is entirely optional. Leave these blank and nothing breaks; the app just logs what *would* have been emailed to the console and still records the notification in the database. That's genuinely handy for local dev, and it means you can plug in any free-tier SMTP provider later (Ethereal while testing, Brevo/Mailjet/a Gmail app-password for something closer to real) just by filling in those four fields.
+- **`DB_PATH`** — where the SQLite file lives. The folder gets created automatically if it isn't there yet.
 
 ---
 
 ## How the rate calculation actually works
 
-This is the part of the spec that mattered most, so it's worth walking through carefully.
+This was the part of the brief that mattered most, so it's worth walking through properly rather than glossing over it.
 
-When someone places an order, here's the sequence:
+When someone places an order, here's what happens, in order:
 
-1. **Figure out the zones.** Every address the customer types in also comes with an "area" (like a locality or pincode) — and every area is mapped to exactly one zone by an admin, ahead of time. The pickup area's zone and the drop area's zone get looked up. If they're the same zone, it's an **intra-zone** delivery. If they're different, it's **inter-zone**. This distinction matters because inter-zone deliveries usually cost more — different rate.
+1. **Figure out the zones.** Every address also comes with an "area" — a locality or pincode, whatever granularity makes sense — and every area is mapped to exactly one zone ahead of time by an admin. The pickup area's zone and the drop area's zone both get looked up. Same zone on both ends → **intra-zone**. Different zones → **inter-zone**. This matters because inter-zone deliveries usually cost more, and they're priced on a separate rate card.
 
-2. **Work out what weight to actually bill.** Courier companies don't just charge by the scale — a huge, light box still takes up a huge amount of van space, so it gets billed as if it were heavier. That's *volumetric weight*, and the formula used here is the standard one:
+2. **Work out what weight to actually bill.** Couriers don't just charge by what's on the scale — a huge, mostly-empty box eats just as much van space as a heavy one, so it gets billed as if it weighed more. That's *volumetric weight*, using the standard formula:
 
    ```
    volumetric weight (kg) = (Length × Breadth × Height in cm) ÷ 5000
    ```
 
-   Whichever is bigger — the actual weight on the scale, or the volumetric weight — is what gets billed. A dense, compact package gets billed by its real weight; a big, empty-feeling box gets billed by its volume.
+   Whichever number is bigger — actual weight or volumetric weight — is what gets billed. A dense little package gets billed by its real weight; a big, airy box gets billed by its volume.
 
-3. **Look up the right rate card.** Admins configure four rate cards: B2B-intra, B2B-inter, B2C-intra, B2C-inter. Each one has a **base price** (a flat starting charge) and a **rate per kg** (multiplied by the billed weight from step 2). Nothing here is hardcoded in the code — every number lives in the database and admins can change it anytime from the Rate Cards screen.
+3. **Look up the right rate card.** Admins configure four of these: B2B-intra, B2B-inter, B2C-intra, B2C-inter. Each has a **base price** (a flat starting charge) and a **rate per kg** that multiplies against the billed weight from step 2. None of these numbers live in the code — they're all in the database, editable anytime from the Rate Cards screen.
 
    ```
    base_charge = base_price + (billed_weight × rate_per_kg)
    ```
 
-4. **Add the COD surcharge, if it applies.** If the customer picked "Cash on Delivery" instead of "Prepaid," a flat surcharge gets added on top — again, a number admins set per order type (B2B orders and B2C orders can have different COD surcharges).
+4. **Add the COD surcharge, if it applies.** Pick "Cash on Delivery" instead of "Prepaid," and a flat surcharge gets tacked on — again, a number admins set per order type, since B2B and B2C can carry different surcharges.
 
-5. **Show the number before anything is committed.** The frontend calls a `/orders/quote` endpoint that runs this exact same calculation and hands back a full breakdown — zone relation, volumetric weight, billed weight, base charge, surcharge, total — so the customer sees precisely what they're about to pay *before* they confirm. When they hit confirm, the order is created using the same calculation function, so the quote and the final charge can never drift apart from each other.
+5. **Show the customer the number before anything's locked in.** The frontend hits a `/orders/quote` endpoint that runs this exact same calculation and hands back the full breakdown — zone relation, volumetric weight, billed weight, base charge, surcharge, total — so what the customer sees is precisely what they're about to pay. When they confirm, the order gets created using that same function, so the quote and the final charge can never quietly drift apart.
 
-If an area hasn't been mapped to a zone yet, or a rate card is missing for the requested order type/zone combination, the quote fails with a clear error rather than silently guessing — better to tell someone to go configure it than to charge the wrong amount.
+If an area hasn't been mapped to a zone, or a rate card's missing for the combination being asked for, the quote fails loudly with a clear message rather than guessing at a number. I'd rather tell someone exactly what to go configure than silently charge the wrong amount.
 
 ---
 
 ## How agent assignment works
 
-Admins can either hand-pick an agent for an order, or hit "auto-assign" and let the system pick. Agents also aren't stuck waiting to be assigned — they have an **Available Pickups** screen where every unassigned order shows up, with the ones in their current zone flagged and sorted to the top. An agent ticks the orders they can take and hits "Take Charge of Selected" to self-assign them. The claim is first-come-first-served: if two agents try to grab the same order, whoever's request lands first gets it, and the second gets a clear "already claimed" message rather than silently overwriting the first agent's claim.
+Admins can hand-pick an agent for an order, or hit "auto-assign" and let the system sort it out. But agents aren't stuck waiting around to be handed work, either — they've got an **Available Pickups** screen listing every unassigned order, with the ones in their current zone flagged and bumped to the top. Tick the ones you can take, hit "Take Charge of Selected," and they're yours. It's first-come-first-served: if two agents go for the same order, whoever's request lands first gets it, and the second gets a clear "already claimed" message instead of silently stealing it out from under the first agent.
 
-Auto-assignment logic (used by the admin's "auto-assign" button and by reschedule), in plain terms: look at the pickup zone, and find an available agent currently sitting in that same zone. Among agents in that zone, prefer whoever has the fewest active deliveries right now, so work doesn't pile up on one person. If nobody's available in the pickup zone, widen the search to any available agent anywhere, using the same "fewest active deliveries" tiebreaker.
+Auto-assignment (used by the admin's button, and again during reschedule) works like this: look at the pickup zone, find an available agent currently sitting in it, and among those, prefer whoever's carrying the fewest active deliveries right now — so work doesn't pile up on one person. If nobody's available in that zone, the search widens to any available agent anywhere, same tiebreaker.
 
-Agents control their own availability from their dashboard (a simple "Go available / Go unavailable" toggle) and can update which zone they're currently in. Admins can see all of this on the Agents screen.
+Agents flip their own availability from their dashboard — a simple "Go available / Go unavailable" toggle — and can update which zone they're currently in. Admins get the full picture of all of that on the Agents screen.
 
 ---
 
 ## The order status lifecycle
 
-Orders move through a fixed sequence:
+Orders move through a fixed path:
 
 ```
 Created → Picked Up → In Transit → Out for Delivery → Delivered
                                                       ↘ Failed → Rescheduled → Picked Up → ...
 ```
 
-A delivery agent can only push a status forward one step at a time, and can't skip steps — this keeps the tracking timeline honest. Admins are the exception: they can override an order to *any* status directly, for the inevitable real-world situation where something needs correcting.
+An agent can only push a status forward one step at a time — no skipping — which keeps the tracking timeline honest. Admins are the one exception: they can override an order to *any* status directly, because in the real world something eventually needs a manual correction.
 
-Every single status change — whether it came from an agent, a customer action (like reschedule), or an admin override — gets written to an `order_status_history` table with a timestamp and who did it. Nothing in that table is ever edited or deleted, so the tracking timeline you see on an order is a genuine, immutable audit trail, not just a "current status" field.
+Every status change, no matter who triggered it — agent, customer reschedule, admin override — gets logged into an `order_status_history` table with a timestamp and who did it. Nothing in that table ever gets edited or deleted, so what you're looking at in the tracking timeline is a genuine audit trail, not just whatever the "current status" field happens to say right now.
 
-### What happens on a failed delivery
+### What happens when a delivery fails
 
-1. The agent marks the order **Failed** (with an optional note on why).
-2. The customer gets an email notification and sees a "Reschedule" option appear on the order page.
-3. The customer picks a new date. Behind the scenes, the same auto-assignment logic from above runs again — a fresh agent gets matched to the order (which might be the same one, or might not, depending on who's available).
-4. The order moves to **Rescheduled**, and from there follows the normal lifecycle again starting from Picked Up.
+1. The agent marks it **Failed**, optionally with a note on why.
+2. The customer gets notified and sees a "Reschedule" option appear on the order.
+3. They pick a new date. Behind the scenes, the exact same auto-assignment logic from above runs again — a fresh agent gets matched (might be the same one, might not, depending on who's free).
+4. The order flips to **Rescheduled** and re-enters the normal lifecycle starting from Picked Up.
 
 ---
 
 ## API reference
 
-All endpoints are under `/api`. Every route except `/auth/login` and `/auth/register` requires a `Bearer` token in the `Authorization` header, which you get back from login/register.
+Everything lives under `/api`. Every route except `/auth/login` and `/auth/register` needs a `Bearer` token in the `Authorization` header, which you get back from logging in or registering.
 
 ### Auth
 | Method | Route | Who | What it does |
@@ -244,27 +268,31 @@ notifications
   id, order_id, channel, message, sent_at
 ```
 
-A couple of design choices worth flagging:
+Two design choices worth flagging, since they're easy to miss just reading column names:
 
-- **`created_by_id` vs `customer_id`** on orders — these are separate on purpose. When an admin places an order on a customer's behalf, `customer_id` is the customer (so it shows up on their dashboard and they get notified), while `created_by_id` records who actually clicked the button.
-- **`order_status_history` is append-only.** Nothing in the API ever updates or deletes a row in this table — it's the audit trail, and it's what powers the tracking timeline in the UI.
+- **`created_by_id` vs `customer_id`** on orders are deliberately separate. When an admin places an order for a customer, `customer_id` is the customer (so it shows up on their dashboard and they get notified), while `created_by_id` just records who actually clicked the button.
+- **`order_status_history` is append-only.** The API never updates or deletes a row in it — it's the audit trail, and it's what powers the tracking timeline you see in the UI.
 
 ---
 
 ## A note on the "hosted application URL" deliverable
 
-This sandbox's outbound network access is locked down to package registries (npm, PyPI, GitHub) — it can't reach Vercel, Render, or Railway to actually deploy for you. The app is 100% ready to deploy as-is, though:
+I built and tested all of this in a sandboxed environment whose outbound network is locked to package registries (npm, PyPI, GitHub) — it genuinely can't reach Vercel, Render, or Railway to deploy anything for me. The app is fully ready to deploy as-is, though:
 
-- **Backend** — deploys as a standard Node service. Point `DB_PATH` at a persistent disk (Render and Railway both offer this) since SQLite is a single file. Set `JWT_SECRET`, SMTP credentials, and `FRONTEND_ORIGIN` (to your deployed frontend URL) as environment variables.
-- **Frontend** — `npm run build` produces static files in `frontend/dist` that deploy directly to Vercel, Netlify, or any static host. Update the API base URL in `frontend/src/api.js` (currently `/api`, relying on the dev proxy) to point at your deployed backend URL, or reintroduce a proxy/rewrite rule on your hosting platform.
+- **Backend** deploys as a plain Node service. Point `DB_PATH` at a persistent disk (Render and Railway both offer one) since SQLite is a single file. Set `JWT_SECRET`, your SMTP credentials, and `FRONTEND_ORIGIN` (pointing at your deployed frontend URL) as environment variables.
+- **Frontend** — `npm run build` gives you static files in `frontend/dist` that deploy straight to Vercel, Netlify, or any static host. Update the API base URL in `frontend/src/api.js` (currently `/api`, which relies on the dev proxy) to point at wherever your backend ends up, or set up an equivalent rewrite rule on your hosting platform.
 
-If you'd like, I can walk through the exact steps for whichever platform you use.
+Happy to walk through the exact steps for whichever platform you land on.
 
 ---
 
 ## A note on tests
 
+<<<<<<< HEAD
 There's no automated test suite included here — given the time available, the priority was making sure the core flows (rate calculation, zone detection, auto-assignment, the full status lifecycle including failure and reschedule, and role-based permissions) actually work correctly, which I verified by hand end-to-end against the running API before writing the frontend against it. If this were headed to production, the rate engine and assignment logic in `backend/src/utils/` are the two places I'd write unit tests for first — they're pure functions with no side effects, so they're cheap to test thoroughly.
 =======
 # Last-Mile-Delivery
 >>>>>>> d784f6c4c1bdb313f3dcadd40c9b5afb480df312
+=======
+There's no automated test suite in here. Given the time I had, I prioritized making sure the actual flows worked correctly — rate calculation, zone detection, auto-assignment, the full status lifecycle including failure and reschedule, role-based permissions — which I verified by hand end-to-end against the running API before building the frontend on top of it. If this were headed to production, the rate engine and assignment logic in `backend/src/utils/` are the first two places I'd put unit tests — they're pure functions with no side effects, so they're cheap to test thoroughly and it's exactly the kind of logic where a silent regression would be expensive.
+>>>>>>> aa0d96fcbaedd0dd4beb633f680bd3e51cabdfe9
