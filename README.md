@@ -291,8 +291,3 @@ Happy to walk through the exact steps for whichever platform you land on.
 <<<<<<< HEAD
 There's no automated test suite included here — given the time available, the priority was making sure the core flows (rate calculation, zone detection, auto-assignment, the full status lifecycle including failure and reschedule, and role-based permissions) actually work correctly, which I verified by hand end-to-end against the running API before writing the frontend against it. If this were headed to production, the rate engine and assignment logic in `backend/src/utils/` are the two places I'd write unit tests for first — they're pure functions with no side effects, so they're cheap to test thoroughly.
 =======
-# Last-Mile-Delivery
->>>>>>> d784f6c4c1bdb313f3dcadd40c9b5afb480df312
-=======
-There's no automated test suite in here. Given the time I had, I prioritized making sure the actual flows worked correctly — rate calculation, zone detection, auto-assignment, the full status lifecycle including failure and reschedule, role-based permissions — which I verified by hand end-to-end against the running API before building the frontend on top of it. If this were headed to production, the rate engine and assignment logic in `backend/src/utils/` are the first two places I'd put unit tests — they're pure functions with no side effects, so they're cheap to test thoroughly and it's exactly the kind of logic where a silent regression would be expensive.
->>>>>>> aa0d96fcbaedd0dd4beb633f680bd3e51cabdfe9
