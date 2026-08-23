@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # Last-Mile Delivery Tracker
 
 I built this to answer a fairly ordinary logistics problem the "right" way: customers place orders, the app tells them exactly what it'll cost before they commit to anything, a delivery agent gets matched to the order (by an admin, automatically, or by grabbing it themselves), and everyone — customer, agent, admin — stays in the loop as the package moves from pickup to doorstep.
